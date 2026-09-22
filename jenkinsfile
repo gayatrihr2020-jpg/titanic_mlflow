@@ -1,0 +1,38 @@
+pipeline {
+    agent any
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo 'Source code checked out from GitHub'
+            }
+        }
+
+        stage('Environment Check') {
+            steps {
+                sh 'python3 --version'
+                sh 'docker --version'
+                sh 'docker compose version'
+            }
+        }
+
+        stage('Project Check') {
+            steps {
+                sh 'ls -la'
+                sh 'ls -la src'
+            }
+        }
+
+    }
+
+    post {
+        success {
+            echo 'Titanic MLOps CI pipeline completed successfully!'
+        }
+
+        failure {
+            echo 'Pipeline failed. Check the stage logs.'
+        }
+    }
+}
