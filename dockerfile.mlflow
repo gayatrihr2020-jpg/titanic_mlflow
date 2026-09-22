@@ -8,8 +8,4 @@ RUN pip install --no-cache-dir -r model-requirements.txt
 
 EXPOSE 5001
 
-CMD ["mlflow", "models", "serve", \
-     "--model-uri", "models:/TitanicSurvivalModel@champion", \
-     "--host", "0.0.0.0", \
-     "--port", "5001", \
-     "--env-manager", "local"]
+CMD ["sh", "-c", "mlflow models serve --model-uri \"${MODEL_URI}\" --host 0.0.0.0 --port 5001 --env-manager local"]

@@ -29,7 +29,7 @@ pipeline {
             steps {
                 sh '''
                     python3 -m py_compile src/*.py
-                    docker compose config
+                
                 '''
             }
         }
@@ -39,6 +39,39 @@ pipeline {
                 sh 'docker compose build'
             }
         }
+
+        stage('Resolve Champion Model') {
+            steps {
+                sh '''
+                    echo "Resolving current champion model..."
+
+                    CHAMPION_VERSION=$(docker run --rm \
+                      -e MLFLOW_TRACKING_URI=http://host.docker.internal:5000 \
+                      --add-host=host.docker.internal:host-gateway \
+                      titanic-mlops-pipeline-mlflow-model \
+                      python -c "import mlflow; c=mlflow.MlflowClient(); print(c.get_model_version_by_alias('TitanicSurvivalModel','champion').version)")
+
+                    echo "Champion version: $CHAMPION_VERSION"
+
+                    echo "MODEL_URI=models:/TitanicSurvivalModel/$CHAMPION_VERSION" > .env
+
+                    echo "Deployment model URI:"
+                    cat .env
+                '''
+            }
+        }
+        
+        stage('Validate Deployment Config') {
+    steps   {
+            sh '''
+                docker compose config
+            '''
+            }
+    } 
+
+
+
+
 
         stage('Deploy') {
             steps {
@@ -112,7 +145,6 @@ pipeline {
                 '''
             }
         }
-
     }
 
     post {
@@ -129,6 +161,5 @@ pipeline {
                 docker compose logs --tail=100 || true
             '''
         }
-
     }
 }

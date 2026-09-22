@@ -9,7 +9,8 @@ services:
 
     environment:
       MLFLOW_TRACKING_URI: http://host.docker.internal:5000
-
+      MODEL_URI: ${MODEL_URI}
+    
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
