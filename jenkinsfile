@@ -11,28 +11,124 @@ pipeline {
 
         stage('Environment Check') {
             steps {
-                sh 'python3 --version'
-                sh 'docker --version'
-                sh 'docker compose version'
+                sh '''
+                    python3 --version
+                    docker --version
+                    docker compose version
+                '''
             }
         }
 
-        stage('Project Check') {
+        stage('Docker Access Check') {
             steps {
-                sh 'ls -la'
-                sh 'ls -la src'
+                sh 'docker ps'
+            }
+        }
+
+        stage('Validate Project') {
+            steps {
+                sh '''
+                    python3 -m py_compile src/*.py
+                    docker compose config
+                '''
+            }
+        }
+
+        stage('Build Docker Images') {
+            steps {
+                sh 'docker compose build'
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh 'docker compose up -d'
+            }
+        }
+
+        stage('Wait for MLflow Model Server') {
+            steps {
+                sh '''
+                    echo "Waiting for MLflow Model Server..."
+
+                    for i in $(seq 1 30); do
+                        if curl -fsS http://127.0.0.1:5001/ping > /dev/null; then
+                            echo "MLflow Model Server is ready."
+                            exit 0
+                        fi
+
+                        echo "Attempt $i/30..."
+                        sleep 2
+                    done
+
+                    echo "MLflow Model Server did not become ready."
+                    docker compose logs mlflow-model
+                    exit 1
+                '''
+            }
+        }
+
+        stage('Test Model Prediction') {
+            steps {
+                sh '''
+                    RESPONSE=$(curl -s -X POST \
+                      http://127.0.0.1:5001/invocations \
+                      -H "Content-Type: application/json" \
+                      -d '{
+                        "dataframe_split": {
+                          "columns": [
+                            "Pclass",
+                            "Sex",
+                            "Age",
+                            "SibSp",
+                            "Parch",
+                            "Fare",
+                            "Embarked"
+                          ],
+                          "data": [
+                            [3, "male", 22.0, 1, 0, 7.25, "S"]
+                          ]
+                        }
+                      }')
+
+                    echo "Model response:"
+                    echo "$RESPONSE"
+
+                    echo "$RESPONSE" | grep -q '"predictions"'
+
+                    echo "Prediction test passed."
+                '''
+            }
+        }
+
+        stage('Verify Streamlit') {
+            steps {
+                sh '''
+                    echo "Checking Streamlit..."
+
+                    curl -fsS http://127.0.0.1:8501 > /dev/null
+
+                    echo "Streamlit is responding."
+                '''
             }
         }
 
     }
 
     post {
+
         success {
-            echo 'Titanic MLOps CI pipeline completed successfully!'
+            echo 'Titanic MLOps CI/CD pipeline completed successfully!'
         }
 
         failure {
-            echo 'Pipeline failed. Check the stage logs.'
+            echo 'Pipeline failed. Showing Docker Compose status and logs.'
+
+            sh '''
+                docker compose ps || true
+                docker compose logs --tail=100 || true
+            '''
         }
+
     }
 }
