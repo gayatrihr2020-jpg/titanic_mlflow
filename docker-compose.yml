@@ -1,35 +1,27 @@
 services:
-
   mlflow-model:
     build:
       context: .
       dockerfile: dockerfile.mlflow
-
     container_name: titanic-mlflow-model
-
     environment:
       MLFLOW_TRACKING_URI: http://host.docker.internal:5000
       MODEL_URI: ${MODEL_URI}
-    
     extra_hosts:
       - "host.docker.internal:host-gateway"
-
+    volumes:
+      - ./mlartifacts:/home/gayatri/titanic-mlflow/mlartifacts:ro
     ports:
       - "5001:5001"
-
 
   streamlit:
     build:
       context: .
       dockerfile: dockerfile
-
     container_name: titanic-streamlit
-
     environment:
       MODEL_URL: http://mlflow-model:5001/invocations
-
     ports:
       - "8501:8501"
-
     depends_on:
       - mlflow-model
