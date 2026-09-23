@@ -141,22 +141,19 @@ preprocessor = ColumnTransformer(
 param_grid = {
     "max_depth": [
         3,
-        5,
-        7,
+        6,
         10,
         None,
     ],
     "min_samples_split": [
         2,
         5,
-        10,
-        20,
+        10
     ],
     "min_samples_leaf": [
         1,
         2,
-        5,
-        10,
+        5
     ],
     "criterion": [
         "gini",
@@ -201,7 +198,7 @@ for parameter, values in param_grid.items():
 
 
 # Number of combinations:
-# 5 x 4 x 4 x 2 = 160
+# 4 x 3 x 3 x 2 = 72
 
 total_trials = (
     len(param_grid["max_depth"])
