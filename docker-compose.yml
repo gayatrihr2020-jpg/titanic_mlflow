@@ -10,7 +10,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - /home/gayatri/titanic-mlflow/mlartifacts:/home/gayatri/titanic-mlflow/mlartifacts:ro
+      - /home/gayatri/titanic-mlflow/mlartifacts:/home/gayatri/titanic-mlflow/mlartifacts
     ports:
       - "5001:5001"
 
